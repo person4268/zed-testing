@@ -20,14 +20,21 @@
 
 
 #include <sl/Camera.hpp>
+#include <fmt/format.h>
+#include <signal.h>
 
-using namespace std;
 using namespace sl;
 
-int main(int argc, char **argv) {
+Camera zed;
 
-    // Create a ZED camera object
-    Camera zed;
+void close_camera_and_exit(int s) {
+    fmt::print("Closing camera and exiting...\n");
+    zed.close();
+    exit(0);
+}
+
+int main(int argc, char **argv) {
+    signal(SIGINT, close_camera_and_exit);
 
     // Set configuration parameters
     InitParameters init_parameters;
@@ -37,15 +44,13 @@ int main(int argc, char **argv) {
     // Open the camera
     auto returned_state = zed.open(init_parameters);
     if (returned_state != ERROR_CODE::SUCCESS) {
-        cout << "Error " << returned_state << ", exit program." << endl;
+        std::cout << "Error " << returned_state << ", exit program." << std::endl;
         return EXIT_FAILURE;
     }
 
-    // Capture 50 images and depth, then stop
-    int i = 0;
     sl::Mat image, depth, point_cloud;
 
-    while (i < 50) {
+    while (true) {
         // A new image is available if grab() returns ERROR_CODE::SUCCESS
         if (zed.grab() == ERROR_CODE::SUCCESS) {
             // Retrieve left image
@@ -62,14 +67,15 @@ int main(int argc, char **argv) {
             sl::float4 point_cloud_value;
             point_cloud.getValue(x, y, &point_cloud_value);
 
-            if(std::isfinite(point_cloud_value.z)){
+            if (std::isfinite(point_cloud_value.z)) {
                 float distance = sqrt(point_cloud_value.x * point_cloud_value.x + point_cloud_value.y * point_cloud_value.y + point_cloud_value.z * point_cloud_value.z);
-                cout<<"Distance to Camera at {"<<x<<";"<<y<<"}: "<<distance<<"mm"<<endl;
-            }else
-                cout<<"The Distance can not be computed at {"<<x<<";"<<y<<"}"<<endl;           
+                // std::cout <<"Distance to Camera at {" << x << ";" << y << "}: "<< distance << "mm" << std::endl;
+                fmt::print("Distance to Camera at {{{};{}}}: {}mm\n", x, y, distance);
+            } else {
+                // std:: cout << "The Distance can not be computed at {" << x << ";" << y << "}" << std::endl;
+                fmt::print("The Distance can not be computed at {{{};{}}}\n", x, y);
 
-            // Increment the loop
-            i++;
+            }
         }
     }
     // Close the camera
