@@ -42,8 +42,10 @@ FetchContent_MakeAvailable(apriltag)
 
 
 find_package(OpenCV REQUIRED)
+include_directories(${OpenCV_INCLUDE_DIRS})
+link_directories(${OpenCV_LIBRARY_DIRS})
 
 # Create executable
 add_executable(zed-test ${SOURCES})
 
-target_link_libraries(zed-test CUDA::toolkit apriltag fmt::fmt ${ZED_LIBRARIES} ${OpenCV_LIBS})
+target_link_libraries(zed-test CUDA::toolkit apriltag fmt::fmt ${ZED_LIBRARIES} ${OpenCV_LIBRARIES})

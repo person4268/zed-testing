@@ -22,6 +22,8 @@
 #include <sl/Camera.hpp>
 #include <fmt/format.h>
 #include <signal.h>
+#include <opencv2/opencv.hpp>
+#include "utils.hpp"
 
 using namespace sl;
 
@@ -38,6 +40,7 @@ int main(int argc, char **argv) {
 
     // Set configuration parameters
     InitParameters init_parameters;
+    init_parameters.camera_resolution = RESOLUTION::HD1080;
     init_parameters.depth_mode = DEPTH_MODE::ULTRA; // Use ULTRA depth mode
     init_parameters.coordinate_units = UNIT::MILLIMETER; // Use millimeter units (for depth measurements)
 
@@ -67,8 +70,12 @@ int main(int argc, char **argv) {
             sl::float4 point_cloud_value;
             point_cloud.getValue(x, y, &point_cloud_value);
 
+            cv::Mat cv_mat = slMat2cvMat(image);
+            cv::circle(cv_mat, cv::Point(x, y), 5, cv::Scalar(0, 0, 255), 1);
+
             if (std::isfinite(point_cloud_value.z)) {
                 float distance = sqrt(point_cloud_value.x * point_cloud_value.x + point_cloud_value.y * point_cloud_value.y + point_cloud_value.z * point_cloud_value.z);
+                cv::putText(cv_mat, fmt::format("{:.2f}mm", distance), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
                 // std::cout <<"Distance to Camera at {" << x << ";" << y << "}: "<< distance << "mm" << std::endl;
                 fmt::print("Distance to Camera at {{{};{}}}: {}mm\n", x, y, distance);
             } else {
@@ -76,6 +83,9 @@ int main(int argc, char **argv) {
                 fmt::print("The Distance can not be computed at {{{};{}}}\n", x, y);
 
             }
+
+            cv::imshow("Image", cv_mat);
+            cv::waitKey(1);
         }
     }
     // Close the camera
