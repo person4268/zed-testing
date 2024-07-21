@@ -1,0 +1,1 @@
+literally needed to edit pyopengl to get this to run and copy pyopengl's dlls from its source code into path

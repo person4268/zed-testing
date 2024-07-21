@@ -1,6 +1,6 @@
 #pragma once
 
-#include <sl/Camera.hpp>
+#include "slCamera.hpp"
 #include <opencv2/opencv.hpp>
 
 inline cv::Mat slMat2cvMat(sl::Mat& input) {

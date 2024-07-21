@@ -18,8 +18,7 @@
 //
 ///////////////////////////////////////////////////////////////////////////
 
-
-#include <sl/Camera.hpp>
+#include "slCamera.hpp"
 #include <fmt/format.h>
 #include <signal.h>
 #include <opencv2/opencv.hpp>
@@ -31,6 +30,7 @@ Camera zed;
 
 void close_camera_and_exit(int s) {
     fmt::print("Closing camera and exiting...\n");
+    zed.disableRecording();
     zed.close();
     exit(0);
 }
@@ -48,6 +48,16 @@ int main(int argc, char **argv) {
     auto returned_state = zed.open(init_parameters);
     if (returned_state != ERROR_CODE::SUCCESS) {
         std::cout << "Error " << returned_state << ", exit program." << std::endl;
+        return EXIT_FAILURE;
+    }
+
+    String outputPath = "C:\\Users\\michael\\Documents\\ZED\\output.svo";
+    RecordingParameters rec;
+    rec.compression_mode = SVO_COMPRESSION_MODE::H264;
+    rec.video_filename = outputPath;
+    returned_state = zed.enableRecording(rec);
+    if (returned_state != ERROR_CODE::SUCCESS) {
+        fmt::println("Error {} while recording", (int)returned_state);
         return EXIT_FAILURE;
     }
 
@@ -77,7 +87,7 @@ int main(int argc, char **argv) {
                 float distance = sqrt(point_cloud_value.x * point_cloud_value.x + point_cloud_value.y * point_cloud_value.y + point_cloud_value.z * point_cloud_value.z);
                 cv::putText(cv_mat, fmt::format("{:.2f}mm", distance), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
                 // std::cout <<"Distance to Camera at {" << x << ";" << y << "}: "<< distance << "mm" << std::endl;
-                fmt::print("Distance to Camera at {{{};{}}}: {}mm\n", x, y, distance);
+                // fmt::print("Distance to Camera at {{{};{}}}: {}mm\n", x, y, distance);
             } else {
                 // std:: cout << "The Distance can not be computed at {" << x << ";" << y << "}" << std::endl;
                 fmt::print("The Distance can not be computed at {{{};{}}}\n", x, y);
