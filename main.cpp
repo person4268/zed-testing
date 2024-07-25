@@ -28,11 +28,22 @@ using namespace sl;
 
 Camera zed;
 
+bool stop;
+int stopCounter = 0;
+
+
 void close_camera_and_exit(int s) {
-    fmt::print("Closing camera and exiting...\n");
-    zed.disableRecording();
-    zed.close();
-    exit(0);
+    stop = true;
+    if(stopCounter == 1) {
+        std::cout << "Ctrl+C hit twice, exiting slightly more forcefully" << std::endl;
+        zed.disableRecording();
+        zed.close();
+        exit(1);
+    } else if (stopCounter > 1) { // honestly not sure if this can ever trigger
+        std::cout << "Ctrl+C hit thrice, stopping extremely forcefully" << std::endl;
+        exit(1);
+    }
+    stopCounter++;
 }
 
 int main(int argc, char **argv) {
@@ -40,7 +51,7 @@ int main(int argc, char **argv) {
 
     // Set configuration parameters
     InitParameters init_parameters;
-    init_parameters.camera_resolution = RESOLUTION::HD1080;
+    init_parameters.camera_resolution = RESOLUTION::HD2K;
     init_parameters.depth_mode = DEPTH_MODE::ULTRA; // Use ULTRA depth mode
     init_parameters.coordinate_units = UNIT::MILLIMETER; // Use millimeter units (for depth measurements)
 
@@ -63,7 +74,7 @@ int main(int argc, char **argv) {
 
     sl::Mat image, depth, point_cloud;
 
-    while (true) {
+    while (!stop) {
         // A new image is available if grab() returns ERROR_CODE::SUCCESS
         if (zed.grab() == ERROR_CODE::SUCCESS) {
             // Retrieve left image
@@ -85,7 +96,7 @@ int main(int argc, char **argv) {
 
             if (std::isfinite(point_cloud_value.z)) {
                 float distance = sqrt(point_cloud_value.x * point_cloud_value.x + point_cloud_value.y * point_cloud_value.y + point_cloud_value.z * point_cloud_value.z);
-                cv::putText(cv_mat, fmt::format("{:.2f}mm", distance), cv::Point(x, y), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
+                cv::putText(cv_mat, fmt::format("{:.2f}cm", distance / 10), cv::Point(x+10, y+10), cv::FONT_HERSHEY_SIMPLEX, 0.5, cv::Scalar(0, 0, 255), 1);
                 // std::cout <<"Distance to Camera at {" << x << ";" << y << "}: "<< distance << "mm" << std::endl;
                 // fmt::print("Distance to Camera at {{{};{}}}: {}mm\n", x, y, distance);
             } else {
@@ -99,6 +110,7 @@ int main(int argc, char **argv) {
         }
     }
     // Close the camera
+    zed.disableRecording();
     zed.close();
     return EXIT_SUCCESS;
 }
