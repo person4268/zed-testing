@@ -2,6 +2,7 @@
 
 #include "slCamera.hpp"
 #include <opencv2/opencv.hpp>
+#include <thread>
 
 inline cv::Mat slMat2cvMat(sl::Mat& input) {
     // Mapping between MAT_TYPE and CV_TYPE
@@ -26,5 +27,10 @@ inline cv::Mat slMat2cvMat(sl::Mat& input) {
         default: break;
     }
 
-    return cv::Mat(input.getHeight(), input.getWidth(), cv_type, input.getPtr<sl::uchar1>(sl::MEM::CPU));
+    return cv::Mat(static_cast<int>(input.getHeight()), static_cast<int>(input.getWidth()), cv_type, input.getPtr<sl::uchar1>(sl::MEM::CPU));
+}
+
+inline int get_n_threads() {
+    int t = std::thread::hardware_concurrency();
+    return t != 0 ? t : 4;
 }
